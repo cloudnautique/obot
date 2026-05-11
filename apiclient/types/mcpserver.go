@@ -49,21 +49,25 @@ type ContainerizedRuntimeConfig struct {
 
 // RemoteRuntimeConfig represents configuration for remote runtime (External MCP servers)
 type RemoteRuntimeConfig struct {
-	URL                 string      `json:"url"`                           // Required: Full URL to remote MCP server
-	IsTemplate          bool        `json:"isTemplate"`                    // Optional: Whether the URL is a template
-	URLTemplate         string      `json:"urlTemplate,omitempty"`         // URL template for user URLs
-	Hostname            string      `json:"hostname,omitempty"`            // Optional: Hostname constraint the URL conforms to
-	Headers             []MCPHeader `json:"headers,omitempty"`             // Optional
-	StaticOAuthRequired bool        `json:"staticOAuthRequired,omitempty"` // Indicates static OAuth is required
+	URL                      string      `json:"url"`                                // Required: Full URL to remote MCP server
+	IsTemplate               bool        `json:"isTemplate"`                         // Optional: Whether the URL is a template
+	URLTemplate              string      `json:"urlTemplate,omitempty"`              // URL template for user URLs
+	Hostname                 string      `json:"hostname,omitempty"`                 // Optional: Hostname constraint the URL conforms to
+	Headers                  []MCPHeader `json:"headers,omitempty"`                  // Optional
+	StaticOAuthRequired      bool        `json:"staticOAuthRequired,omitempty"`      // Indicates static OAuth is required
+	LocalhostCallbackEnabled bool        `json:"localhostCallbackEnabled,omitempty"` // Whether to use loopback OAuth callbacks
+	LocalhostCallbackPath    string      `json:"localhostCallbackPath,omitempty"`    // Path to use for loopback OAuth callbacks
 }
 
 // RemoteCatalogConfig represents template configuration for remote servers in catalog entries
 type RemoteCatalogConfig struct {
-	FixedURL            string      `json:"fixedURL,omitempty"`            // Fixed URL for all instances
-	URLTemplate         string      `json:"urlTemplate,omitempty"`         // URL template for user URLs
-	Hostname            string      `json:"hostname,omitempty"`            // Required hostname for user URLs
-	Headers             []MCPHeader `json:"headers,omitempty"`             // Optional
-	StaticOAuthRequired bool        `json:"staticOAuthRequired,omitempty"` // Indicates static OAuth configuration is required
+	FixedURL                 string      `json:"fixedURL,omitempty"`                 // Fixed URL for all instances
+	URLTemplate              string      `json:"urlTemplate,omitempty"`              // URL template for user URLs
+	Hostname                 string      `json:"hostname,omitempty"`                 // Required hostname for user URLs
+	Headers                  []MCPHeader `json:"headers,omitempty"`                  // Optional
+	StaticOAuthRequired      bool        `json:"staticOAuthRequired,omitempty"`      // Indicates static OAuth configuration is required
+	LocalhostCallbackEnabled bool        `json:"localhostCallbackEnabled,omitempty"` // Whether to use loopback OAuth callbacks
+	LocalhostCallbackPath    string      `json:"localhostCallbackPath,omitempty"`    // Path to use for loopback OAuth callbacks
 }
 
 // MultiUserConfig represents configuration for multi-user MCP servers in catalog entries
@@ -538,9 +542,11 @@ func MapCatalogEntryToServer(catalogEntry MCPServerCatalogEntryManifest, userURL
 			}
 		}
 
-		// Copy headers and static OAuth flag from catalog entry
+		// Copy headers, OAuth settings, and loopback callback settings from catalog entry
 		remoteConfig.Headers = catalogEntry.RemoteConfig.Headers
 		remoteConfig.StaticOAuthRequired = catalogEntry.RemoteConfig.StaticOAuthRequired
+		remoteConfig.LocalhostCallbackEnabled = catalogEntry.RemoteConfig.LocalhostCallbackEnabled
+		remoteConfig.LocalhostCallbackPath = catalogEntry.RemoteConfig.LocalhostCallbackPath
 		serverManifest.RemoteConfig = remoteConfig
 	default:
 		return serverManifest, RuntimeValidationError{

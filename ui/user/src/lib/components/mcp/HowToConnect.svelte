@@ -32,11 +32,18 @@
 		}
 	};
 
-	const options = Object.keys(optionMap).map((key) => ({ key, value: optionMap[key] }));
-	let selected = $state(options[0].key);
-	let previousSelected = $state(options[0].key);
+	let options = $derived(Object.keys(optionMap).map((key) => ({ key, value: optionMap[key] })));
+	let selected = $state('cursor');
+	let previousSelected = $state('cursor');
 	let isAnimating = $state(false);
 	let flyDirection = $state(100); // 100 for right, -100 for left
+
+	$effect(() => {
+		if (!options.some((option) => option.key === selected)) {
+			selected = options[0]?.key ?? 'cursor';
+			previousSelected = selected;
+		}
+	});
 
 	function getFlyDirection(newSelection: string, oldSelection: string): number {
 		const newIndex = options.findIndex((option) => option.key === newSelection);
@@ -225,6 +232,7 @@ ${servers
 	}
 
 `)}
+
 					{/if}
 				</div>
 			{/if}

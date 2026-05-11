@@ -5,6 +5,9 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/gptscript-ai/go-gptscript"
@@ -41,7 +44,7 @@ func NewMCPOAuthHandlerFactory(baseURL string, sessionManager *mcp.SessionManage
 	}
 }
 
-func (f *MCPOAuthHandlerFactory) CheckForMCPAuth(req api.Context, mcpServer v1.MCPServer, mcpServerConfig mcp.ServerConfig, userID, mcpID, oauthAppAuthRequestID string) (string, error) {
+func (f *MCPOAuthHandlerFactory) CheckForMCPAuth(req api.Context, mcpServer v1.MCPServer, mcpServerConfig mcp.ServerConfig, userID, mcpID, oauthAppAuthRequestID, oauthRedirectURI string) (string, error) {
 	if mcpServer.Spec.Manifest.Runtime == types.RuntimeComposite {
 		var componentServers v1.MCPServerList
 		if err := f.client.List(req.Context(), &componentServers,
@@ -74,7 +77,7 @@ func (f *MCPOAuthHandlerFactory) CheckForMCPAuth(req api.Context, mcpServer v1.M
 				continue
 			}
 
-			u, err := f.CheckForMCPAuth(req, componentServer, componentConfig, userID, componentServer.Name, oauthAppAuthRequestID)
+			u, err := f.CheckForMCPAuth(req, componentServer, componentConfig, userID, componentServer.Name, oauthAppAuthRequestID, oauthRedirectURI)
 			if err != nil {
 				if req.Context().Err() != nil {
 					return "", fmt.Errorf("failed to check component server OAuth: %w", req.Context().Err())
@@ -101,7 +104,11 @@ func (f *MCPOAuthHandlerFactory) CheckForMCPAuth(req api.Context, mcpServer v1.M
 	}
 
 	// Remote server, check for OAuth directly
+	mcpServerConfig.URL = normalizeRootURL(mcpServerConfig.URL)
 	oauthHandler := f.newMCPOAuthHandler(userID, mcpID, mcpServerConfig.URL, oauthAppAuthRequestID)
+	oauthMCPRedirectURL := f.mcpOAuthRedirectURL(oauthRedirectURI, mcpServerConfig.LocalhostCallbackEnabled, mcpServerConfig.LocalhostCallbackPath)
+	log.Infof("Checking remote MCP OAuth: mcpID=%s mcpServer=%s remoteURL=%s localhostCallbackEnabled=%t localhostCallbackPath=%q clientRedirectURI=%s upstreamOAuthRedirectURI=%s",
+		mcpID, mcpServer.Name, mcpServerConfig.URL, mcpServerConfig.LocalhostCallbackEnabled, mcpServerConfig.LocalhostCallbackPath, oauthRedirectURI, oauthMCPRedirectURL)
 	errChan := make(chan error, 1)
 
 	go func() {
@@ -109,7 +116,7 @@ func (f *MCPOAuthHandlerFactory) CheckForMCPAuth(req api.Context, mcpServer v1.M
 		_, err := f.mcpSessionManager.ClientForMCPServerForOAuthCheck(req.Context(), "Obot OAuth Check", mcpServerConfig, nmcp.ClientOption{
 			ClientName: "Obot MCP OAuth",
 			HTTPClientOptions: nmcp.HTTPClientOptions{
-				OAuthRedirectURL: fmt.Sprintf("%s/oauth/mcp/callback", f.baseURL),
+				OAuthRedirectURL: oauthMCPRedirectURL,
 				OAuthClientName:  "Obot MCP Gateway",
 				CallbackHandler:  oauthHandler,
 				ClientCredLookup: oauthHandler,
@@ -127,13 +134,62 @@ func (f *MCPOAuthHandlerFactory) CheckForMCPAuth(req api.Context, mcpServer v1.M
 
 	select {
 	case err := <-errChan:
+		if err != nil {
+			log.Errorf("Remote MCP OAuth check failed: mcpID=%s mcpServer=%s upstreamOAuthRedirectURI=%s err=%v", mcpID, mcpServer.Name, oauthMCPRedirectURL, err)
+		}
 		return "", err
 	case <-req.Context().Done():
 		return "", fmt.Errorf("failed to check for MCP server OAuth: %w", req.Context().Err())
 	case u := <-oauthHandler.URLChan():
-		log.Infof("Remote MCP server requires OAuth authentication: mcpID=%s", mcpID)
+		log.Infof("Remote MCP server requires OAuth authentication: mcpID=%s mcpServer=%s upstreamOAuthRedirectURI=%s", mcpID, mcpServer.Name, oauthMCPRedirectURL)
 		return u, nil
 	}
+}
+
+func (f *MCPOAuthHandlerFactory) mcpOAuthRedirectURL(oauthRedirectURI string, localhostCallbackEnabled bool, localhostCallbackPath string) string {
+	defaultRedirect := fmt.Sprintf("%s/oauth/mcp/callback", f.baseURL)
+	if !localhostCallbackEnabled {
+		return defaultRedirect
+	}
+	u, err := url.Parse(oauthRedirectURI)
+	if err != nil || u.Scheme != "http" {
+		return defaultRedirect
+	}
+	host := u.Hostname()
+	ip := net.ParseIP(host)
+	if host != "localhost" && (ip == nil || !ip.IsLoopback()) {
+		return defaultRedirect
+	}
+
+	// Some MCP OAuth providers only accept conventional local-client callback
+	// paths for loopback redirects. Keep the hosted gateway callback unchanged,
+	// but allow remote server configuration to select the loopback path. The
+	// default matches clients such as mcp-remote and MCP Inspector.
+	u.Path = cleanLocalhostCallbackPath(localhostCallbackPath)
+	u.RawPath = ""
+	u.RawQuery = ""
+	u.Fragment = ""
+	return u.String()
+}
+
+func cleanLocalhostCallbackPath(path string) string {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return "/oauth/callback"
+	}
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	return path
+}
+
+func normalizeRootURL(s string) string {
+	u, err := url.Parse(s)
+	if err != nil || u.Scheme == "" || u.Host == "" || u.Path != "" {
+		return s
+	}
+	u.Path = "/"
+	return u.String()
 }
 
 type mcpOAuthHandler struct {
@@ -165,6 +221,7 @@ func (m *mcpOAuthHandler) URLChan() <-chan string {
 }
 
 func (m *mcpOAuthHandler) HandleAuthURL(ctx context.Context, _ string, authURL string) (bool, error) {
+	authURL = addOIDCConsentPrompt(authURL)
 	select {
 	case m.urlChan <- authURL:
 		return true, nil
@@ -173,6 +230,23 @@ func (m *mcpOAuthHandler) HandleAuthURL(ctx context.Context, _ string, authURL s
 	default:
 		return false, nil
 	}
+}
+
+func addOIDCConsentPrompt(authURL string) string {
+	u, err := url.Parse(authURL)
+	if err != nil {
+		return authURL
+	}
+	q := u.Query()
+	if q.Get("prompt") != "" {
+		return authURL
+	}
+	if !slices.Contains(strings.Fields(q.Get("scope")), "openid") {
+		return authURL
+	}
+	q.Set("prompt", "consent")
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 func (m *mcpOAuthHandler) NewState(ctx context.Context, conf *oauth2.Config, verifier string) (string, <-chan nmcp.CallbackPayload, error) {
@@ -187,6 +261,7 @@ func (m *mcpOAuthHandler) NewState(ctx context.Context, conf *oauth2.Config, ver
 }
 
 func (m *mcpOAuthHandler) Lookup(ctx context.Context, authServerURL string) (string, string, error) {
+	log.Infof("Looking up static MCP OAuth client credentials: mcpID=%s authorizationServer=%s", m.mcpID, authServerURL)
 	// First, try to look up credentials associated with the MCP server's catalog entry
 	if m.mcpID != "" {
 		var server v1.MCPServer
@@ -199,10 +274,16 @@ func (m *mcpOAuthHandler) Lookup(ctx context.Context, authServerURL string) (str
 					clientID := cred.Env["CLIENT_ID"]
 					clientSecret := cred.Env["CLIENT_SECRET"]
 					if clientID != "" && clientSecret != "" {
+						log.Infof("Using catalog static MCP OAuth client credentials: mcpID=%s catalogEntry=%s authorizationServer=%s", m.mcpID, server.Spec.MCPServerCatalogEntryName, authServerURL)
 						return clientID, clientSecret, nil
 					}
+					log.Infof("Catalog MCP OAuth credential is missing client ID or secret: mcpID=%s catalogEntry=%s credential=%s authorizationServer=%s", m.mcpID, server.Spec.MCPServerCatalogEntryName, credName, authServerURL)
+				} else {
+					log.Infof("Catalog MCP OAuth credential lookup failed: mcpID=%s catalogEntry=%s credential=%s authorizationServer=%s err=%v", m.mcpID, server.Spec.MCPServerCatalogEntryName, credName, authServerURL, err)
 				}
 			}
+		} else {
+			log.Infof("MCP server lookup for static OAuth credentials failed: mcpID=%s authorizationServer=%s err=%v", m.mcpID, authServerURL, err)
 		}
 		// If not found, continue to OAuthApp fallback
 	}
@@ -219,10 +300,12 @@ func (m *mcpOAuthHandler) Lookup(ctx context.Context, authServerURL string) (str
 	}
 
 	if len(oauthApps.Items) != 1 {
+		log.Infof("Static MCP OAuth app lookup did not find exactly one app: mcpID=%s authorizationServer=%s count=%d", m.mcpID, authServerURL, len(oauthApps.Items))
 		return "", "", fmt.Errorf("expected exactly one oauth app for authorization server %s, found %d", authServerURL, len(oauthApps.Items))
 	}
 
 	app := oauthApps.Items[0]
+	log.Infof("Using OAuthApp static MCP OAuth client credentials: mcpID=%s oauthApp=%s authorizationServer=%s", m.mcpID, app.Name, authServerURL)
 
 	var clientSecret string
 	cred, err := m.gptscript.RevealCredential(ctx, []string{app.Name}, app.Spec.Manifest.Alias)

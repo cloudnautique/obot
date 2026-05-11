@@ -147,6 +147,7 @@ func (h *handler) authorize(req api.Context) error {
 		redirectWithAuthorizeError(req, redirectURI, Error{
 			Code:        ErrInvalidRequest,
 			Description: "code_challenge is required when using token endpoint auth method none",
+			State:       state,
 		})
 	}
 
@@ -247,6 +248,7 @@ func (h *handler) callback(req api.Context) error {
 		redirectWithAuthorizeError(req, oauthAppAuthRequest.Spec.RedirectURI, Error{
 			Code:        ErrAccessDenied,
 			Description: "user is not authenticated",
+			State:       oauthAppAuthRequest.Spec.State,
 		})
 		return nil
 	}
@@ -298,6 +300,7 @@ func (h *handler) callback(req api.Context) error {
 		redirectWithAuthorizeError(req, oauthAppAuthRequest.Spec.RedirectURI, Error{
 			Code:        ErrServerError,
 			Description: err.Error(),
+			State:       oauthAppAuthRequest.Spec.State,
 		})
 		return nil
 	}
@@ -312,11 +315,12 @@ func (h *handler) callback(req api.Context) error {
 			return err
 		}
 
-		u, err := h.oauthChecker.CheckForMCPAuth(req, mcpServer, mcpServerConfig, req.User.GetUID(), mcpID, oauthAppAuthRequest.Name)
+		u, err := h.oauthChecker.CheckForMCPAuth(req, mcpServer, mcpServerConfig, req.User.GetUID(), mcpID, oauthAppAuthRequest.Name, oauthAppAuthRequest.Spec.RedirectURI)
 		if err != nil {
 			redirectWithAuthorizeError(req, oauthAppAuthRequest.Spec.RedirectURI, Error{
 				Code:        ErrServerError,
 				Description: err.Error(),
+				State:       oauthAppAuthRequest.Spec.State,
 			})
 			return nil
 		}
@@ -362,6 +366,7 @@ func (h *handler) oauthCallback(req api.Context) error {
 		redirectWithAuthorizeError(req, oauthAppAuthRequest.Spec.RedirectURI, Error{
 			Code:        ErrAccessDenied,
 			Description: "user is not authenticated",
+			State:       oauthAppAuthRequest.Spec.State,
 		})
 		return nil
 	}
@@ -372,6 +377,7 @@ func (h *handler) oauthCallback(req api.Context) error {
 		redirectWithAuthorizeError(req, oauthAppAuthRequest.Spec.RedirectURI, Error{
 			Code:        ErrServerError,
 			Description: err.Error(),
+			State:       oauthAppAuthRequest.Spec.State,
 		})
 		return nil
 	}
@@ -394,6 +400,7 @@ func (h *handler) oauthCallback(req api.Context) error {
 		redirectWithAuthorizeError(req, oauthAppAuthRequest.Spec.RedirectURI, Error{
 			Code:        ErrServerError,
 			Description: err.Error(),
+			State:       oauthAppAuthRequest.Spec.State,
 		})
 		return nil
 	}

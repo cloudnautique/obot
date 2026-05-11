@@ -815,7 +815,7 @@ func (h *MCPCatalogHandler) GenerateToolPreviews(req api.Context) error {
 	}
 
 	if serverConfig.Runtime == types.RuntimeRemote {
-		oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "")
+		oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "", "")
 		if err != nil {
 			return fmt.Errorf("failed to check for MCP auth: %w", err)
 		}
@@ -946,6 +946,7 @@ func (h *MCPCatalogHandler) generateCompositeToolPreviews(req api.Context, entry
 				"system",
 				server.Name,
 				"",
+				"",
 			)
 			if err != nil {
 				return fmt.Errorf("failed to check for MCP auth: %w", err)
@@ -1060,7 +1061,7 @@ func (h *MCPCatalogHandler) GenerateToolPreviewsOAuthURL(req api.Context) error 
 		return types.NewErrBadRequest("failed to create temporary server and config: %v", err)
 	}
 
-	oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "")
+	oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "", "")
 	if err != nil {
 		return types.NewErrBadRequest("failed to check for MCP auth: %v", err)
 	}
@@ -1158,7 +1159,7 @@ func (h *MCPCatalogHandler) GenerateComponentToolPreviews(req api.Context) error
 	}
 
 	if serverConfig.Runtime == types.RuntimeRemote {
-		oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "")
+		oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "", "")
 		if err != nil {
 			return fmt.Errorf("failed to check for MCP auth: %w", err)
 		}
@@ -1285,7 +1286,7 @@ func (h *MCPCatalogHandler) GenerateComponentToolPreviewsOAuthURL(req api.Contex
 		return req.Write(map[string]string{"oauthURL": ""})
 	}
 
-	oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "")
+	oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "", "")
 	if err != nil {
 		return types.NewErrBadRequest("failed to check for MCP auth: %v", err)
 	}
@@ -1367,7 +1368,7 @@ func (h *MCPCatalogHandler) generateCompositeOAuthURLs(req api.Context, entry v1
 		}
 
 		// Check if OAuth is required
-		oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "")
+		oauthURL, err := h.oauthChecker.CheckForMCPAuth(req, server, serverConfig, "system", server.Name, "", "")
 		if err != nil || oauthURL == "" {
 			// On error, assume no OAuth needed
 			delete(oauthURLs, componentID)

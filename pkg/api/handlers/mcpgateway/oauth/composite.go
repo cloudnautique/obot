@@ -73,7 +73,7 @@ func (h *handler) checkCompositeAuth(req api.Context) error {
 			return fmt.Errorf("failed to get server config: %w", err)
 		}
 
-		authURL, err := h.oauthChecker.CheckForMCPAuth(req, componentServer, serverConfig, userID, componentServer.Name, oauthAuthRequestID)
+		authURL, err := h.oauthChecker.CheckForMCPAuth(req, componentServer, serverConfig, userID, componentServer.Name, oauthAuthRequestID, authRequest.Spec.RedirectURI)
 		if err != nil || authURL == "" {
 			continue
 		}

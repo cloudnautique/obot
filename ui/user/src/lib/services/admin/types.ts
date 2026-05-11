@@ -35,6 +35,8 @@ export interface MCPCatalogSource {
 export interface RemoteRuntimeConfigAdmin {
 	url: string;
 	headers?: MCPCatalogEntryFieldManifest[];
+	localhostCallbackEnabled?: boolean;
+	localhostCallbackPath?: string;
 }
 
 export interface RemoteCatalogConfigAdmin {
@@ -43,6 +45,8 @@ export interface RemoteCatalogConfigAdmin {
 	hostname?: string;
 	headers?: MCPCatalogEntryFieldManifest[];
 	staticOAuthRequired?: boolean;
+	localhostCallbackEnabled?: boolean;
+	localhostCallbackPath?: string;
 }
 
 export interface CompositeCatalogConfig {
@@ -175,6 +179,8 @@ export interface MCPFilterRemoteRuntimeConfig {
 	hostname?: string;
 	headers?: MCPHeaderManifest[];
 	staticOAuthRequired?: boolean;
+	localhostCallbackEnabled?: boolean;
+	localhostCallbackPath?: string;
 }
 
 export interface MCPEnvManifest extends MCPHeaderManifest {

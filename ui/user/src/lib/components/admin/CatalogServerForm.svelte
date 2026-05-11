@@ -181,9 +181,11 @@
 					formData.remoteServerConfig = manifest.remoteConfig
 						? {
 								url: manifest.remoteConfig.url,
-								headers: manifest.remoteConfig.headers?.map((h) => ({ ...h, value: '' })) ?? []
+								headers: manifest.remoteConfig.headers?.map((h) => ({ ...h, value: '' })) ?? [],
+								localhostCallbackEnabled: manifest.remoteConfig.localhostCallbackEnabled,
+								localhostCallbackPath: manifest.remoteConfig.localhostCallbackPath
 							}
-						: { url: '', headers: [] };
+					: { url: '', headers: [] };
 					break;
 			}
 
@@ -375,7 +377,9 @@
 						hostname: baseData.remoteConfig.hostname?.trim() || undefined,
 						urlTemplate: baseData.remoteConfig.urlTemplate?.trim() || undefined,
 						headers: baseData.remoteConfig.headers || [],
-						staticOAuthRequired: baseData.remoteConfig.staticOAuthRequired
+						staticOAuthRequired: baseData.remoteConfig.staticOAuthRequired,
+						localhostCallbackEnabled: baseData.remoteConfig.localhostCallbackEnabled,
+						localhostCallbackPath: baseData.remoteConfig.localhostCallbackPath?.trim() || undefined
 					};
 				}
 				break;

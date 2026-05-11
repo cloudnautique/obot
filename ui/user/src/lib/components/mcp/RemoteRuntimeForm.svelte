@@ -46,6 +46,8 @@
 		Boolean(
 			(config as RemoteCatalogConfigAdmin).hostname ||
 			(config as RemoteCatalogConfigAdmin).urlTemplate ||
+			(config as RemoteCatalogConfigAdmin).localhostCallbackEnabled ||
+			(config as RemoteCatalogConfigAdmin).localhostCallbackPath ||
 			(config.headers && config.headers.length > 0) ||
 			(config as RemoteCatalogConfigAdmin).staticOAuthRequired
 		)
@@ -234,6 +236,69 @@
 	</div>
 {/snippet}
 
+{#snippet localhostCallbackPath()}
+	{@const remoteConfig = config as RemoteCatalogConfigAdmin | RemoteRuntimeConfigAdmin}
+	<div
+		class="dark:bg-surface1 dark:border-surface3 bg-background flex flex-col gap-4 rounded-lg border border-transparent p-4 shadow-sm"
+	>
+		<div class="flex justify-between gap-4">
+			<button
+				type="button"
+				class="flex grow cursor-pointer flex-col gap-1 text-left"
+				disabled={readonly}
+				onclick={() => {
+					if (readonly) return;
+					remoteConfig.localhostCallbackEnabled = !remoteConfig.localhostCallbackEnabled;
+				}}
+			>
+				<h4
+					class={twMerge(
+						'text-sm font-semibold',
+						!remoteConfig.localhostCallbackEnabled && 'opacity-50'
+					)}
+				>
+					Localhost Callback
+				</h4>
+				<p class="text-on-surface1 text-xs font-light">
+					Enable this when the remote MCP server must redirect OAuth callbacks through the local
+					<code class="rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800">obot mcp-connect</code>
+					process instead of the hosted Obot callback.
+				</p>
+			</button>
+			<div class="flex self-start">
+				<Toggle
+					classes={{ label: 'text-sm text-inherit' }}
+					disabled={readonly}
+					label={remoteConfig.localhostCallbackEnabled
+						? 'Disable Localhost Callback'
+						: 'Enable Localhost Callback'}
+					checked={!!remoteConfig.localhostCallbackEnabled}
+					onChange={(checked) => {
+						remoteConfig.localhostCallbackEnabled = checked;
+					}}
+				/>
+			</div>
+		</div>
+
+		{#if remoteConfig.localhostCallbackEnabled}
+			<div class="flex flex-col gap-2" in:slide={{ axis: 'y' }}>
+				<label for="localhost-callback-path" class="text-sm font-light">Callback Path</label>
+				<input
+					id="localhost-callback-path"
+					class="text-input-filled dark:bg-background flex grow"
+					bind:value={remoteConfig.localhostCallbackPath}
+					disabled={readonly}
+					placeholder="/oauth/callback"
+				/>
+				<p class="text-on-surface1 text-xs font-light">
+					Leave blank to use
+					<code class="rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800">/oauth/callback</code>.
+				</p>
+			</div>
+		{/if}
+	</div>
+{/snippet}
+
 {#if variant === 'server'}
 	{@const serverConfig = config as RemoteRuntimeConfigAdmin}
 	<div
@@ -263,6 +328,7 @@
 
 		{@render children?.()}
 	</div>
+	{@render localhostCallbackPath()}
 	{@render remoteHeaders(false)}
 	{@render afterHeaders?.()}
 {:else if !showAdvanced}
@@ -433,6 +499,7 @@
 			{@render children?.()}
 		</div>
 	</div>
+	{@render localhostCallbackPath()}
 	{@render remoteHeaders(selectedType === 'urlTemplate')}
 	{@render afterHeaders?.()}
 	<!-- Static OAuth Configuration -->
@@ -517,6 +584,8 @@
 				const catalogConfig = config as RemoteCatalogConfigAdmin;
 				catalogConfig.hostname = undefined;
 				catalogConfig.urlTemplate = undefined;
+				catalogConfig.localhostCallbackEnabled = undefined;
+				catalogConfig.localhostCallbackPath = undefined;
 				catalogConfig.fixedURL = catalogConfig.fixedURL ?? '';
 			}
 		}}

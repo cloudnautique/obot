@@ -39,7 +39,7 @@ const requestTimeUpdateInterval = 15 * time.Minute
 
 // MCPOAuthChecker will check the OAuth status for an MCP server. This interface breaks an import cycle.
 type MCPOAuthChecker interface {
-	CheckForMCPAuth(req api.Context, server v1.MCPServer, config mcp.ServerConfig, userID, mcpID, oauthAppAuthRequestID string) (string, error)
+	CheckForMCPAuth(req api.Context, server v1.MCPServer, config mcp.ServerConfig, userID, mcpID, oauthAppAuthRequestID, oauthRedirectURI string) (string, error)
 }
 
 type MCPHandler struct {
@@ -657,7 +657,7 @@ func (m *MCPHandler) GetOAuthURL(req api.Context) error {
 		return types.NewErrNotFound("MCP server not found")
 	}
 
-	u, err := m.mcpOAuthChecker.CheckForMCPAuth(req, server, serverConfig, req.User.GetUID(), server.Name, "")
+	u, err := m.mcpOAuthChecker.CheckForMCPAuth(req, server, serverConfig, req.User.GetUID(), server.Name, "", "")
 	if err != nil {
 		return fmt.Errorf("failed to get OAuth URL: %w", err)
 	}

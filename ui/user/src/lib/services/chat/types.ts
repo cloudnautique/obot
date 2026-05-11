@@ -329,12 +329,16 @@ export interface RemoteRuntimeConfig {
 	headers?: MCPSubField[];
 	fixedURL?: string;
 	isTemplate?: boolean;
+	localhostCallbackEnabled?: boolean;
+	localhostCallbackPath?: string;
 }
 
 export interface RemoteCatalogConfig {
 	fixedURL?: string;
 	hostname?: string;
 	headers?: MCPSubField[];
+	localhostCallbackEnabled?: boolean;
+	localhostCallbackPath?: string;
 }
 
 export interface MultiUserConfig {

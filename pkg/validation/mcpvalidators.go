@@ -517,6 +517,10 @@ func (v RemoteValidator) validateRemoteConfig(config types.RemoteRuntimeConfig) 
 		}
 	}
 
+	if err := validateLocalhostCallbackPath(config.LocalhostCallbackPath); err != nil {
+		return err
+	}
+
 	// Validate headers
 	for i, header := range config.Headers {
 		if strings.TrimSpace(header.Key) == "" {
@@ -535,6 +539,28 @@ func (v RemoteValidator) validateRemoteConfig(config types.RemoteRuntimeConfig) 
 		}
 	}
 
+	return nil
+}
+
+func validateLocalhostCallbackPath(path string) error {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return nil
+	}
+	if !strings.HasPrefix(path, "/") {
+		return types.RuntimeValidationError{
+			Runtime: types.RuntimeRemote,
+			Field:   "localhostCallbackPath",
+			Message: "localhost callback path must start with /",
+		}
+	}
+	if strings.ContainsAny(path, "?#") {
+		return types.RuntimeValidationError{
+			Runtime: types.RuntimeRemote,
+			Field:   "localhostCallbackPath",
+			Message: "localhost callback path cannot contain query or fragment",
+		}
+	}
 	return nil
 }
 
@@ -603,6 +629,10 @@ func (v RemoteValidator) validateRemoteCatalogConfig(config types.RemoteCatalogC
 				Message: "hostname should only contain alphanumeric and hyphens",
 			}
 		}
+	}
+
+	if err := validateLocalhostCallbackPath(config.LocalhostCallbackPath); err != nil {
+		return err
 	}
 
 	for i, header := range config.Headers {

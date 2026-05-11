@@ -44,10 +44,12 @@ type ServerConfig struct {
 	Files   []File   `json:"files"`
 
 	// Remote configuration.
-	URL                     string   `json:"url"`
-	Headers                 []string `json:"headers"`
-	PassthroughHeaderNames  []string `json:"passthroughHeaderNames"`
-	PassthroughHeaderValues []string `json:"passthroughHeaderValues"`
+	URL                      string   `json:"url"`
+	Headers                  []string `json:"headers"`
+	PassthroughHeaderNames   []string `json:"passthroughHeaderNames"`
+	PassthroughHeaderValues  []string `json:"passthroughHeaderValues"`
+	LocalhostCallbackEnabled bool     `json:"localhostCallbackEnabled"`
+	LocalhostCallbackPath    string   `json:"localhostCallbackPath"`
 
 	// Containerized configuration.
 	ContainerImage string `json:"containerImage"`
@@ -187,6 +189,8 @@ func configureRemoteRuntime(serverConfig *ServerConfig, remoteConfig *types.Remo
 
 	var missingRequiredNames []string
 	serverConfig.URL = remoteConfig.URL
+	serverConfig.LocalhostCallbackEnabled = remoteConfig.LocalhostCallbackEnabled
+	serverConfig.LocalhostCallbackPath = remoteConfig.LocalhostCallbackPath
 	serverConfig.Headers = make([]string, 0, len(remoteConfig.Headers))
 	for _, header := range remoteConfig.Headers {
 		val := header.Value

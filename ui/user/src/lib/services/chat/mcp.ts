@@ -710,7 +710,9 @@ export const convertServerRuntimeFormDataToManifest = (
 			if (baseData.remoteServerConfig) {
 				serverManifest.manifest.remoteConfig = {
 					url: baseData.remoteServerConfig.url,
-					headers: baseData.remoteServerConfig.headers || []
+					headers: baseData.remoteServerConfig.headers || [],
+					localhostCallbackEnabled: baseData.remoteServerConfig.localhostCallbackEnabled,
+					localhostCallbackPath: baseData.remoteServerConfig.localhostCallbackPath?.trim() || undefined
 				};
 			}
 			break;
