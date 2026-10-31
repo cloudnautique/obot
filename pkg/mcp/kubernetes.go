@@ -166,7 +166,7 @@ func (k *kubernetesBackend) ensureServerDeployment(ctx context.Context, server S
 		server.Webhooks[i] = webhook
 	}
 
-	if server.Runtime == types.RuntimeRemote || server.Runtime == types.RuntimeVMCP {
+	if deploysNothing(server.Runtime) {
 		// Remove any existing deployment for remote and vMCP servers
 		return server, k.deployServerObjects(ctx, server, nil)
 	}
@@ -405,7 +405,7 @@ func (k *kubernetesBackend) k8sObjects(ctx context.Context, server ServerConfig)
 	if server.Runtime == types.RuntimeOpenAPI {
 		server.ContainerImage = k.openAPIImage
 	}
-	if server.Runtime == types.RuntimeRemote || server.Runtime == types.RuntimeVMCP {
+	if deploysNothing(server.Runtime) {
 		return nil, nil
 	}
 

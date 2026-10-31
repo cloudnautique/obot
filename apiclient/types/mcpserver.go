@@ -15,6 +15,8 @@ const (
 	RuntimeOpenAPI       Runtime = "openapi"
 	RuntimeRemote        Runtime = "remote"
 	RuntimeVMCP          Runtime = "vmcp"
+	// RuntimeBuiltin servers run inside Obot itself, so they deploy nothing. Only Obot provides them.
+	RuntimeBuiltin Runtime = "builtin"
 
 	// RuntimeComposite is retained only to identify legacy resources during migration.
 	RuntimeComposite Runtime = "composite"
@@ -63,6 +65,12 @@ type ContainerizedRuntimeConfig struct {
 	EgressDomains         []string `json:"egressDomains,omitempty"`         // Optional: Empty means allow all, otherwise allow only the listed domains when network policy enforcement is enabled
 	DenyAllEgress         *bool    `json:"denyAllEgress,omitempty"`         // Optional: Deny all egress when network policy enforcement is enabled
 	StartupTimeoutSeconds int      `json:"startupTimeoutSeconds,omitempty"` // Optional: Timeout to start and connect to the MCP server, in seconds. Defaults to 60s, max 600s.
+}
+
+// BuiltinRuntimeConfig names an MCP server built into Obot.
+type BuiltinRuntimeConfig struct {
+	// Name identifies the built-in server, for example obot-admin.
+	Name string `json:"name"`
 }
 
 // RemoteRuntimeConfig represents configuration for remote runtime (External MCP servers)
@@ -164,6 +172,7 @@ type MCPServerCatalogEntryManifest struct {
 	ContainerizedConfig *ContainerizedRuntimeConfig `json:"containerizedConfig,omitempty"`
 	RemoteConfig        *RemoteCatalogConfig        `json:"remoteConfig,omitempty"`
 	OpenAPIConfig       *OpenAPIRuntimeConfig       `json:"openAPIConfig,omitempty"`
+	BuiltinConfig       *BuiltinRuntimeConfig       `json:"builtinConfig,omitempty"`
 
 	Config []MCPConfig `json:"config,omitempty"`
 
@@ -381,6 +390,7 @@ type MCPServerManifest struct {
 	RemoteConfig        *RemoteRuntimeConfig        `json:"remoteConfig,omitempty"`
 	OpenAPIConfig       *OpenAPIRuntimeConfig       `json:"openAPIConfig,omitempty"`
 	CompositeConfig     *CompositeRuntimeConfig     `json:"compositeConfig,omitempty"`
+	BuiltinConfig       *BuiltinRuntimeConfig       `json:"builtinConfig,omitempty"`
 
 	// Deprecated: migrate per-user headers to Config with UserAllowed set.
 	DeprecatedMultiUserConfig *MultiUserConfig `json:"multiUserConfig,omitempty"`
@@ -707,6 +717,15 @@ func MapCatalogEntryToServer(catalogEntry MCPServerCatalogEntryManifest, userURL
 			}
 		}
 		serverManifest.OpenAPIConfig = catalogConfiguration.OpenAPIConfig
+	case RuntimeBuiltin:
+		if catalogEntry.BuiltinConfig == nil || catalogEntry.BuiltinConfig.Name == "" {
+			return serverManifest, RuntimeValidationError{
+				Runtime: RuntimeBuiltin,
+				Field:   "builtinConfig",
+				Message: "built-in configuration is required for built-in runtime",
+			}
+		}
+		serverManifest.BuiltinConfig = &BuiltinRuntimeConfig{Name: catalogEntry.BuiltinConfig.Name}
 	case RuntimeUVX:
 		if catalogEntry.UVXConfig == nil {
 			return serverManifest, RuntimeValidationError{

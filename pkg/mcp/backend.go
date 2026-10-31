@@ -481,3 +481,9 @@ func keyValueSliceToMap(values []string) map[string]string {
 	}
 	return result
 }
+
+// deploysNothing reports whether servers of the runtime run without a deployment of their own:
+// remote servers run elsewhere, and vMCPs and built-in servers run inside Obot.
+func deploysNothing(runtime types.Runtime) bool {
+	return runtime == types.RuntimeRemote || runtime == types.RuntimeVMCP || runtime == types.RuntimeBuiltin
+}
