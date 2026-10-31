@@ -166,7 +166,7 @@ func (m *MCPHandler) ListEntriesFromAllSources(req api.Context) error {
 	}
 
 	// Allow admins/auditors to bypass ACR filtering with ?all=true
-	if (req.UserIsAdmin() || req.UserIsAuditor()) && req.URL.Query().Get("all") == "true" {
+	if req.UserCanViewAdmin() && req.URL.Query().Get("all") == "true" {
 		entries := make([]types.MCPServerCatalogEntry, 0, len(list.Items))
 		for _, entry := range list.Items {
 			entries = append(entries, convertEntry(entry))
@@ -298,7 +298,7 @@ func (m *MCPHandler) ListServer(req api.Context) error {
 	items := make([]types.MCPServer, 0, len(servers.Items))
 
 	// Allow admins/auditors to bypass ACR filtering with ?all=true
-	bypassACRCheck := (req.UserIsAdmin() || req.UserIsAuditor()) && req.URL.Query().Get("all") == "true"
+	bypassACRCheck := req.UserCanViewAdmin() && req.URL.Query().Get("all") == "true"
 
 	for _, server := range servers.Items {
 		if server.Spec.Template || server.Spec.CompositeName != "" {
@@ -1137,7 +1137,7 @@ func (m *MCPHandler) ListServersFromAllSources(req api.Context) error {
 	var allowedServers []v1.MCPServer
 
 	// Allow admins/auditors to bypass ACR filtering with ?all=true
-	if (req.UserIsAdmin() || req.UserIsAuditor()) && req.URL.Query().Get("all") == "true" {
+	if req.UserCanViewAdmin() && req.URL.Query().Get("all") == "true" {
 		allowedServers = list.Items
 	} else {
 		// Apply ACR filtering for regular users and for admins without ?all=true
@@ -1416,7 +1416,7 @@ func (m *MCPHandler) GetServerDetails(req api.Context) error {
 		return types.NewErrBadRequest("MCP server %s has runtime %s, which does not support details retrieval", server.Name, server.Spec.Manifest.Runtime)
 	}
 
-	if !req.UserIsAdmin() && !req.UserIsAuditor() {
+	if !req.UserCanViewAdmin() {
 		workspaceID := req.PathValue("workspace_id")
 		if workspaceID == "" {
 			return types.NewErrNotFound("MCP server %s not found", server.Name)
@@ -1821,7 +1821,7 @@ func (m *MCPHandler) StreamServerLogs(req api.Context) error {
 	// If this is a single-user MCP server that belongs to the user, then let them access the logs.
 	if !server.Spec.IsOwnedBy(req.User.GetUID()) || !server.Spec.IsSingleUser() {
 		// If the user doesn't own the server and is not an admin or auditor, check if they have access to the workspace.
-		if !req.UserIsAdmin() && !req.UserIsAuditor() {
+		if !req.UserCanViewAdmin() {
 			workspaceID := req.PathValue("workspace_id")
 			if workspaceID == "" {
 				return types.NewErrNotFound("MCP server %s not found", server.Name)
