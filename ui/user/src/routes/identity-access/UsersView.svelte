@@ -100,7 +100,8 @@
 			name: getUserDisplayName(user),
 			role: getUserRoleLabel(user.role).split(','),
 			effectiveRole: getUserRoleLabel(user.effectiveRole).split(','),
-			roleId: user.role & ~Role.AUDITOR,
+			// Admin Read-Only can be stored with the power user role it was added to; the dialog shows it as Admin Read-Only.
+			roleId: user.role & Role.ADMIN_READONLY ? Role.ADMIN_READONLY : user.role & ~Role.AUDITOR,
 			auditor: Boolean(user.role & Role.AUDITOR),
 			// Only an Owner can enable a user with any of these roles, from their own role or a group.
 			privileged: (user.effectiveRole & PRIVILEGED_ROLES) !== 0,
@@ -188,6 +189,7 @@
 			? [{ label: m.core_role_owner(), id: Role.OWNER }]
 			: []),
 		{ label: m.core_role_admin(), id: Role.ADMIN },
+		{ label: m.core_role_admin_readonly(), id: Role.ADMIN_READONLY },
 		{ label: m.identity_access_roles_power_user_plus_short(), id: Role.POWERUSER_PLUS },
 		{ label: m.core_role_power_user(), id: Role.POWERUSER },
 		{ label: m.core_role_standard_user(), id: Role.BASIC }
@@ -389,6 +391,8 @@
 	}, 100);
 
 	const duration = PAGE_TRANSITION_DURATION;
+	// Auditor on these roles also grants read-only access to the admin area. On Admin Read-Only and
+	// higher roles, which can already view it, Auditor only adds audit log details.
 	const auditorReadonlyAdminRoles = [Role.BASIC, Role.POWERUSER, Role.POWERUSER_PLUS];
 
 	const hasValidLicense = $derived(Boolean(version.current.enterprise));
