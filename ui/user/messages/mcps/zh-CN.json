@@ -1195,5 +1195,14 @@
 	"mcps_filters_kind_builtin": "内置",
 	"mcps_filters_kind_mcp_server": "MCP 服务器",
 	"mcps_filters_create_guardrail_filter": "创建护栏过滤器",
-	"mcps_filters_create_guardrail": "从护栏创建"
+	"mcps_filters_create_guardrail": "从护栏创建",
+	"mcps_list_tools_request": "您的编码代理请求 Obot 列出 {name} 的工具。",
+	"mcps_list_tools_explanation": "列出工具会使用其目录配置短暂启动该服务器，与在 Obot 其他位置列出工具相同。仅当此请求由您发起时才继续。",
+	"mcps_list_tools_confirm": "启动并列出工具",
+	"mcps_list_tools_decline": "拒绝",
+	"mcps_list_tools_done": "已列出 {count} 个工具。请返回终端，obot 命令已获取结果。",
+	"mcps_list_tools_declined": "您已拒绝。未启动任何内容。",
+	"mcps_list_tools_unavailable": "此请求已过期或已被处理。请重新运行 obot 命令。",
+	"mcps_list_tools_failed": "无法列出工具：{error}。已通知 obot 命令，您的代理可以看到此结果。",
+	"mcps_list_tools_other_entry": "此请求针对另一个 MCP 服务器，无法在此处理。请重新运行 obot 命令。"
 }

@@ -1195,5 +1195,14 @@
 	"mcps_filters_kind_builtin": "Built-in",
 	"mcps_filters_kind_mcp_server": "MCP server",
 	"mcps_filters_create_guardrail_filter": "Create Guardrail Filter",
-	"mcps_filters_create_guardrail": "Create From Guardrail"
+	"mcps_filters_create_guardrail": "Create From Guardrail",
+	"mcps_list_tools_request": "Your coding agent asked Obot to list the tools of {name}.",
+	"mcps_list_tools_explanation": "Listing them launches the server briefly with its catalog configuration, the same as listing tools elsewhere in Obot. Continue only if you started this request.",
+	"mcps_list_tools_confirm": "Launch and list tools",
+	"mcps_list_tools_decline": "Decline",
+	"mcps_list_tools_done": "Listed {count} tools. Return to your terminal; the obot command has them.",
+	"mcps_list_tools_declined": "You declined. Nothing was launched.",
+	"mcps_list_tools_unavailable": "This request expired or was already answered. Run the obot command again.",
+	"mcps_list_tools_failed": "The tools couldn't be listed: {error}. The obot command was told, so your agent can see it.",
+	"mcps_list_tools_other_entry": "This request is for a different MCP server, so it can't be answered here. Run the obot command again."
 }

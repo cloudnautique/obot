@@ -1195,5 +1195,14 @@
 	"mcps_filters_kind_builtin": "組み込み",
 	"mcps_filters_kind_mcp_server": "MCP サーバー",
 	"mcps_filters_create_guardrail_filter": "ガードレールフィルターを作成",
-	"mcps_filters_create_guardrail": "ガードレールから作成"
+	"mcps_filters_create_guardrail": "ガードレールから作成",
+	"mcps_list_tools_request": "コーディングエージェントが {name} のツールの一覧を Obot に要求しました。",
+	"mcps_list_tools_explanation": "一覧表示すると、Obot の他の場所でツールを一覧表示する場合と同様に、カタログの設定でサーバーが一時的に起動されます。このリクエストを自分で開始した場合にのみ続行してください。",
+	"mcps_list_tools_confirm": "起動してツールを一覧表示",
+	"mcps_list_tools_decline": "拒否",
+	"mcps_list_tools_done": "{count} 個のツールを一覧表示しました。ターミナルに戻ってください。obot コマンドが結果を受け取っています。",
+	"mcps_list_tools_declined": "拒否しました。何も起動されていません。",
+	"mcps_list_tools_unavailable": "このリクエストは期限切れか、すでに応答済みです。obot コマンドをもう一度実行してください。",
+	"mcps_list_tools_failed": "ツールを一覧表示できませんでした: {error}。obot コマンドに通知されたため、エージェントにも伝わります。",
+	"mcps_list_tools_other_entry": "このリクエストは別の MCP サーバー向けのため、ここでは応答できません。obot コマンドをもう一度実行してください。"
 }
